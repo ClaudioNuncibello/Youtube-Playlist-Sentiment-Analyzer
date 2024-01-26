@@ -7,6 +7,8 @@ FROM openjdk:${OPENJDK_VERSION}-${IMAGE_VARIANT}
 
 COPY --from=py3 / /
 
+ADD clear_training.csv /home/
+
 ARG PYSPARK_VERSION=3.4.0
 RUN pip --no-cache-dir install pyspark==${PYSPARK_VERSION}
 RUN pip --no-cache-dir install elasticsearch numpy pyspark
