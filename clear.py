@@ -1,5 +1,4 @@
 import csv
-import os
 
 def leggi_csv(file_path):
     dati = []
@@ -24,10 +23,8 @@ def leggi_csv(file_path):
 
     return dati
 
-def scrivi_csv(dati, output_file='clear_training.csv', folder='spark'):
-    output_path = os.path.join(folder, output_file)
-    
-    with open(output_path, 'w', encoding='utf-8', newline='') as file:
+def scrivi_csv(dati, output_file='clear_training.csv'):
+    with open(output_file, 'w', encoding='utf-8', newline='') as file:
         colonne = ['textID', 'selected_text', 'sentiment']
         writer = csv.DictWriter(file, fieldnames=colonne)
 
@@ -39,5 +36,5 @@ def scrivi_csv(dati, output_file='clear_training.csv', folder='spark'):
 file_path = 'spark/train.csv'
 dati = leggi_csv(file_path)
 
-# Scrivere i dati risultanti in un nuovo file CSV nella cartella 'spark'
+# Scrivere i dati risultanti in un nuovo file CSV
 scrivi_csv(dati)

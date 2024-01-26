@@ -13,15 +13,23 @@ from pyspark.ml.feature import HashingTF, IDF, Tokenizer, StopWordsRemover
 from pyspark.ml.classification import LogisticRegression
 
 kafkaServer = "kafkaServer:9092"
-#topic = "tap"
-
+topic = "comments"
 
 # create traingin set
-# tap = tp.StructType([
-#     tp.StructField(name='ente', dataType=tp.StringType(), nullable=True),
-#     tp.StructField(name='name', dataType=tp.StringType(), nullable=True),
-#     tp.StructField(name='bird', dataType=tp.StringType(), nullable=True),
+# myProject = tp.StructType([
+#     tp.StructField(name='videoId', dataType=tp.StringType(), nullable=True),
+#     tp.StructField(name='videoTitle', dataType=tp.StringType(), nullable=True),
+#     tp.StructField(name='created_at',
+#                    dataType=tp.TimestampType(), nullable=True),
+#     tp.StructField(name='comment', dataType=tp.StringType(), nullable=True),
 # ])
+
+# create schema for training set
+schema = tp.StructType([
+    tp.StructField(name='textId', dataType=tp.StringType(), nullable=True),
+    tp.StructField(name='text', dataType=tp.StringType(), nullable=True),
+    tp.StructField(name='sentiment', dataType=tp.IntegerType(), nullable=True),
+ ])
 
 # create spark session
 sparkConf = SparkConf()
@@ -30,12 +38,18 @@ spark = SparkSession(sc)
 
 sc.setLogLevel("ERROR")
 
+print("Sto leggendo il traingin set...")
+training_set = spark.read.csv(
+    'clear_training.csv', schema=schema, header=True, sep=','
+)
+print("Finito.")
+
 #create DataFrame
 df = spark \
     .readStream \
     .format("kafka") \
     .option("kafka.bootstrap.servers", kafkaServer) \
-    .option("subscribe", "myProjet") \
+    .option("subscribe", topic) \
     .load()
 df = df.selectExpr("CAST(value AS STRING)")
 

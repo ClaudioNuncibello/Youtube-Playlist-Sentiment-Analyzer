@@ -13,8 +13,6 @@ load_dotenv('.env')
 API_KEY = os.getenv('API_KEY')
 API_SERVICE_NAME = 'youtube'
 API_VERSION = 'v3'
-#CSV_FILENAME = 'trending_videos.csv'
-
 
 # authenticate to the API
 def get_authenticated_service():
@@ -54,7 +52,6 @@ def playlist_videos(youtube):
 
         if not next_page_token:
             break
-
     return playlist_items
 
 
@@ -66,6 +63,7 @@ def statistic_videos(youtube):
 
     playlist_items = playlist_videos(youtube)
     videos = []
+    comments= []
 
     for item in playlist_items:
         video_id = item['snippet']['resourceId']['videoId']
@@ -81,15 +79,15 @@ def statistic_videos(youtube):
             likes = video_statistics.get('likeCount', 0)
             dislikes = video_statistics.get('dislikeCount', 0)
 
-        video_item = {
-            'videoId': video_id,
-            'videoTitle': video_title,
-            'views': views,
-            'likes': likes,
-            'dislikes': dislikes,
-            'comments': []
-        }
-        #videos.append(video_item)
+            video_item = {
+                'Id_videos': video_id,
+                'videoTitle': video_title,
+                'views': views,
+                'likes': likes,
+                'dislikes': dislikes,
+            }
+            videos.append(video_item)
+        
 
         try:
                 request = youtubeAPI.commentThreads().list(
@@ -107,7 +105,7 @@ def statistic_videos(youtube):
                         'created_at': comment['publishedAt'],
                         'comment': comment['textDisplay']
                     }
-                    videos.append(comment_item)
+                    comments.append(comment_item)
         except HttpError as e:
             error_message = json.loads(e.content)['error']['message']
             if 'disabled comments' in error_message:
@@ -117,8 +115,11 @@ def statistic_videos(youtube):
                 print(
                     f"Errore durante il recupero dei commenti per il video con ID '{video_id}':", error_message)
 
-    for comment in videos:
-        send_to_logstash(comment)
+    for comment in comments:
+         send_to_logstash(comments)
+        
+    for video_id in videos:
+        send_to_logstash(videos)
 
 
 # main
