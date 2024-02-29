@@ -1,7 +1,6 @@
 import argparse
 import os
 import json
-from urllib import response
 import requests
 import googleapiclient.discovery
 from dotenv import load_dotenv
@@ -37,12 +36,13 @@ def send_to_logstash(data):
 # Retrieve all videos in a YouTube playlist
 def playlist_videos(youtube):
 
+    playlist_id_ita = "PL_xGnDm5NCoOh8jSRpwk_ve9xTGI4t4nj"
     playlist_items = []
     next_page_token = None
     while True:
         playlist_items_response = youtube.playlistItems().list(
             part='snippet',
-            playlistId= "PL_xGnDm5NCoOh8jSRpwk_ve9xTGI4t4nj",
+            playlistId = playlist_id_ita,
             maxResults=50,
             pageToken=next_page_token
         ).execute()
@@ -115,11 +115,7 @@ def statistic_videos(youtube):
                 print(
                     f"Errore durante il recupero dei commenti per il video con ID '{video_id}':", error_message)
 
-    for comment in comments:
-         send_to_logstash(comments)
-        
-    for video_id in videos:
-        send_to_logstash(videos)
+    send_to_logstash(comments)
 
 
 # main
