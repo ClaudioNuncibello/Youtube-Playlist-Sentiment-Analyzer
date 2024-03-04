@@ -101,9 +101,6 @@ services:
             kafkaTopic:
                 condition: service_completed_successfully
 
-
-
-
     kafkaConsumer2:
         image: kafka:tap
         container_name: kafkaConsumer2
@@ -117,7 +114,24 @@ services:
             kafkaTopic:
                 condition: service_completed_successfully
 
-
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.12.2-arm64
+        container_name: elasticsearch
+        environment:
+            - discovery.type=single-node
+            - bootstrap.memory_lock=true
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - "xpack.security.enabled=false"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        volumes:
+            - ./esdata:/usr/share/elasticsearch/data
+        ports:
+            - 9200:9200
+        networks:
+            - tap
 
     spark:
         image: spark:tap
@@ -126,9 +140,9 @@ services:
         networks:
             - tap
         container_name: spark
-     # # depends_on:
-     # #   - elasticsearch
-       # restart: on-failure
+        depends_on:
+            - elasticsearch
+        #restart: on-failure
    
 
 
