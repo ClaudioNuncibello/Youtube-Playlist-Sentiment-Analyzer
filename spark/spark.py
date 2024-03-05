@@ -101,6 +101,9 @@ df = df.selectExpr("CAST(value AS STRING)") \
     .select(from_json("value", myProject).alias("data")) \
     .select("data.*")
 
+#sentiment analysis trasform
+df = df.withColumn("sentiment_score", sentiment_udf(df["comment"]))
+
 # Funzione per l'invio dei dati a Elasticsearch
 # def send_to_elasticsearch(df, batch_id):
 #     df.write \
