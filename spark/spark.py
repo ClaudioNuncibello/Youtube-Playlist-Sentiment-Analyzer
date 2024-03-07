@@ -85,7 +85,7 @@ sentiment_udf = udf(analyze_sentiment, FloatType())
 myProject = tp.StructType([
     tp.StructField(name='videoId', dataType=tp.StringType(), nullable=True),
     tp.StructField(name='videoTitle', dataType=tp.StringType(), nullable=True),
-    tp.StructField(name='created_at', dataType=tp.TimestampType(), nullable=True),
+    tp.StructField(name='created_at', dataType=tp.StringType(), nullable=True),
     tp.StructField(name='comment', dataType=tp.StringType(), nullable=True),
 ])
 
@@ -97,28 +97,25 @@ df = spark \
     .load()
 
 # Cast dei messaggi ricevuti da Kafka con lo schema fornito
-df = df.selectExpr("CAST(value AS STRING)") \
-    .select(from_json("value", myProject).alias("data")) \
-    .select("data.*")
+df = df.selectExpr("CAST(value AS STRING)")\
+        .select(from_json("value", myProject).alias("data"))\
+        .select("data.*")
 
 #sentiment analysis trasform
 df = df.withColumn("sentiment_score", sentiment_udf(df["comment"]))
 
-# Funzione per l'invio dei dati a Elasticsearch
-# def send_to_elasticsearch(df, batch_id):
-#     df.write \
-#         .format("org.elasticsearch.spark.sql") \
-#         .option("es.nodes", elastic_host) \
-#         .option("es.resource", elastic_index) \
-#         .option("es.mapping.id", "comment") \
-#         .mode("append") \
-#         .save()
+#send to elastic
+def send_batch_to_elasticsearch(df, epoch_id):
+    rows = df.collect()
+    for row in rows:
+        es.index(index=elastic_index, body=row.asDict(), ignore=400)
 
-# Write the result to console
+
+# Scrivi i risultati in Elasticsearch utilizzando foreachBatch
 query = df \
     .writeStream \
-    .format("console") \
+    .foreachBatch(send_batch_to_elasticsearch) \
     .start()
 
-# Wait for the query to terminate
+# Attendere la terminazione dello streaming
 query.awaitTermination()
