@@ -40,20 +40,6 @@ services:
             - kafkaserver
 
 
-    newKafkaTopic:
-        image: kafka:tap
-        container_name: newKafkaTopic
-        environment:
-            - KAFKA_ACTION=create-topic
-            - KAFKA_PARTITION=1
-            - KAFKA_TOPIC=videos
-        networks: 
-            tap:
-        depends_on:
-            - zookeeper
-            - kafkaserver
-
-
 
     kafka-ui:
         image: provectuslabs/kafka-ui:latest
@@ -101,18 +87,7 @@ services:
             kafkaTopic:
                 condition: service_completed_successfully
 
-    kafkaConsumer2:
-        image: kafka:tap
-        container_name: kafkaConsumer2
-        environment:
-            - KAFKA_ACTION=consumer
-            - KAFKA_TOPIC=videos
-            - KAFKA_GROUP_ID=videos
-        networks: 
-            tap:
-        depends_on:
-            kafkaTopic:
-                condition: service_completed_successfully
+                
 
     elasticsearch:
         image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1-arm64

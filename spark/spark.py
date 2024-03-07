@@ -111,11 +111,10 @@ def send_batch_to_elasticsearch(df, epoch_id):
         es.index(index=elastic_index, body=row.asDict(), ignore=400)
 
 
-# Scrivi i risultati in Elasticsearch utilizzando foreachBatch
+# write to elastic
 query = df \
     .writeStream \
     .foreachBatch(send_batch_to_elasticsearch) \
     .start()
-
-# Attendere la terminazione dello streaming
+    
 query.awaitTermination()
