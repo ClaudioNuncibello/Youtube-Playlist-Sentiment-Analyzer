@@ -7,9 +7,6 @@ FROM openjdk:${OPENJDK_VERSION}-${IMAGE_VARIANT}
 
 COPY --from=py3 / /
 
-ADD lemmas_small.txt /home/
-ADD default-sentiment-dict.txt /home/
-
 ARG PYSPARK_VERSION=3.4.0
 RUN pip --no-cache-dir install pyspark==${PYSPARK_VERSION}
 RUN pip --no-cache-dir install elasticsearch numpy pyspark sparknlp vaderSentiment nltk
