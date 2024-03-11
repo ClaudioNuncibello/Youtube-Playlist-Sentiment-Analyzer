@@ -107,6 +107,7 @@ services:
             - 9200:9200
         networks:
             - tap
+        mem_limit: 3g
 
     spark:
         image: spark:tap

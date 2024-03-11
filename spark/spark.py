@@ -29,14 +29,24 @@ elastic_index = "videos"
 es_mapping = {
     "mappings": {
         "properties": {
-            "videoTitle": {"type": "text"},
-            "created_at": {"type": "date", "format": "yyyy-MM-dd'T'HH:mm:ss"},
-            "comment": {"type": "text", "fielddata": True},
-            "sentiment_score": {"type": "float"},
-            
+            "videoTitle": {
+                "type": "text"
+            },
+            "created_at": {
+                "type": "date",
+                "format": "yyyy-MM-dd'T'HH:mm:ss"
+            },
+            "comment": {
+                "type": "text",
+                "fielddata": True
+            },
+            "sentiment_score": {
+                "type": "float"
+            }
         }
     }
 }
+
 
 # Configurazione di Spark
 spark = SparkSession.builder \
@@ -106,9 +116,13 @@ df = df.withColumn("sentiment_score", sentiment_udf(df["comment"]))
 
 #send to elastic
 def send_batch_to_elasticsearch(df, epoch_id):
-    rows = df.collect()
-    for row in rows:
-        es.index(index=elastic_index, body=row.asDict(), ignore=400)
+    try:
+        rows = df.collect()
+        for row in rows:
+            es.index(index=elastic_index, body=row.asDict(), ignore=400)
+        print("dati inviati ad elastic")
+    except Exception as e:
+        print(f"Errore durante l'invio dei dati a Elasticsearch: {e}")
 
 
 # write to elastic
