@@ -117,7 +117,7 @@ df = df.withColumn("sentiment_score", sentiment_udf(df["comment"]))
 #send to elastic
 def send_batch_to_elasticsearch(df, epoch_id):
     try:
-        rows = df.collect()
+        rows = df.toLocalIterator()
         for row in rows:
             es.index(index=elastic_index, body=row.asDict(), ignore=400)
         print("dati inviati ad elastic")
