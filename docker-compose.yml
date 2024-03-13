@@ -40,20 +40,6 @@ services:
             - kafkaserver
 
 
-    newKafkaTopic:
-        image: kafka:tap
-        container_name: newKafkaTopic
-        environment:
-            - KAFKA_ACTION=create-topic
-            - KAFKA_PARTITION=1
-            - KAFKA_TOPIC=videos
-        networks: 
-            tap:
-        depends_on:
-            - zookeeper
-            - kafkaserver
-
-
 
     kafka-ui:
         image: provectuslabs/kafka-ui:latest
@@ -101,23 +87,27 @@ services:
             kafkaTopic:
                 condition: service_completed_successfully
 
+                
 
-
-
-    kafkaConsumer2:
-        image: kafka:tap
-        container_name: kafkaConsumer2
+    elasticsearch:
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.7.1-arm64
+        container_name: elasticsearch
         environment:
-            - KAFKA_ACTION=consumer
-            - KAFKA_TOPIC=videos
-            - KAFKA_GROUP_ID=videos
-        networks: 
-            tap:
-        depends_on:
-            kafkaTopic:
-                condition: service_completed_successfully
-
-
+            - discovery.type=single-node
+            - bootstrap.memory_lock=true
+            - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+            - "xpack.security.enabled=false"
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+        volumes:
+            - ./esdata:/usr/share/elasticsearch/data
+        ports:
+            - 9200:9200
+        networks:
+            - tap
+        mem_limit: 3g
 
     spark:
         image: spark:tap
@@ -126,9 +116,27 @@ services:
         networks:
             - tap
         container_name: spark
-     # # depends_on:
-     # #   - elasticsearch
-       # restart: on-failure
+        depends_on:
+            - elasticsearch
+        #restart: on-failure
+
+    # grafana:
+    #     image: grafana/grafana:10.2.4
+    #     container_name: grafana
+    #     ports:
+    #         - 3000:3000
+
+    kibana:
+        image: docker.elastic.co/kibana/kibana:8.7.1-arm64
+        container_name: kibana
+        ports:
+            - 5601:5601
+        environment:
+            - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+        networks:
+            - tap
+        depends_on:
+            - elasticsearch
    
 
 
