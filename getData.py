@@ -6,6 +6,7 @@ import googleapiclient.discovery
 from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+import time
 
 # Load environment variables
 load_dotenv('.env')
@@ -62,42 +63,32 @@ def statistic_videos(youtube):
         API_SERVICE_NAME, API_VERSION, developerKey=API_KEY)
 
     playlist_items = playlist_videos(youtube)
-    videos = []
-    comments= []
+    comments = []
+
+    # Carica gli ID dei commenti già inviati
+    try:
+        with open('comment_ids.json', 'r') as file:
+            sent_comment_ids = json.load(file)
+    except FileNotFoundError:
+        sent_comment_ids = []
 
     for item in playlist_items:
         video_id = item['snippet']['resourceId']['videoId']
-        video_response = youtube.videos().list(
-            part='snippet,statistics',
-            id = video_id
-        ).execute()
-
-        for item in video_response.get('items', []):
-            video_title = item['snippet']['title']
-            video_statistics = item.get('statistics', {})
-            views = video_statistics.get('viewCount', 0)
-            likes = video_statistics.get('likeCount', 0)
-            dislikes = video_statistics.get('dislikeCount', 0)
-
-            video_item = {
-                'Id_videos': video_id,
-                'videoTitle': video_title,
-                'views': views,
-                'likes': likes,
-                'dislikes': dislikes,
-            }
-            videos.append(video_item)
-        
+        video_title = item['snippet']['title']
 
         try:
-                request = youtubeAPI.commentThreads().list(
-                    part="snippet",
-                    videoId=video_id,
-                    maxResults=100
-                )
-                response = request.execute()
+            request = youtubeAPI.commentThreads().list(
+                part="snippet",
+                videoId=video_id,
+                maxResults=100
+            )
+            response = request.execute()
 
-                for comment_thread in response.get('items', []):
+            for comment_thread in response.get('items', []):
+                comment_id = comment_thread['snippet']['topLevelComment']['id']
+                
+                # Verifica se il commento è già stato inviato
+                if comment_id not in sent_comment_ids:
                     comment = comment_thread['snippet']['topLevelComment']['snippet']
                     comment_item = {
                         'videoId': video_id,
@@ -106,6 +97,8 @@ def statistic_videos(youtube):
                         'comment': comment['textDisplay']
                     }
                     comments.append(comment_item)
+                    # Aggiungi l'ID del commento alla lista dei commenti inviati
+                    sent_comment_ids.append(comment_id)
         except HttpError as e:
             error_message = json.loads(e.content)['error']['message']
             if 'disabled comments' in error_message:
@@ -115,19 +108,29 @@ def statistic_videos(youtube):
                 print(
                     f"Errore durante il recupero dei commenti per il video con ID '{video_id}':", error_message)
 
+    # Salva gli ID dei commenti già inviati
+    with open('comment_ids.json', 'w') as file:
+        json.dump(sent_comment_ids, file)
+
     send_to_logstash(comments)
 
 
-# main
+# Intervallo di tempo tra ogni esecuzione in secondi
+intervallo_tempo = 10
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     args = parser.parse_args()
 
     youtube = get_authenticated_service()
-    try:
-        statistic_videos(youtube)
-    except HttpError as e:
-        print('Si è verificato un errore HTTP %d:\n%s' %
-              (e.resp.status, e.content))
-
-              
+    
+    # Loop infinito per eseguire il monitoraggio in tempo reale
+    while True:
+        try:
+            statistic_videos(youtube)
+        except HttpError as e:
+            print('Si è verificato un errore HTTP %d:\n%s' %
+                  (e.resp.status, e.content))
+        
+        # Attendere prima di eseguire nuovamente
+        time.sleep(intervallo_tempo)
