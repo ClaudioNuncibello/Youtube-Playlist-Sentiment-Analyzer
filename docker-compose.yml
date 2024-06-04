@@ -107,7 +107,7 @@ services:
             - 9200:9200
         networks:
             - tap
-        mem_limit: 3g
+        
 
     spark:
         image: spark:tap
@@ -146,5 +146,5 @@ networks:
         driver: bridge
         ipam:
             config:
-                - subnet: 10.0.100.1/24
+                - subnet: 10.0.100.0/24
 

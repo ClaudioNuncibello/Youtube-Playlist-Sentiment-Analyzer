@@ -37,7 +37,7 @@ def send_to_logstash(data):
 # Retrieve all videos in a YouTube playlist
 def playlist_videos(youtube):
 
-    playlist_id_ita = "PL_xGnDm5NCoOh8jSRpwk_ve9xTGI4t4nj"
+    playlist_id_ita = "PL_xGnDm5NCoN-EdtcyMhzGmhEtBWmhVLm"
     playlist_items = []
     next_page_token = None
     while True:
@@ -94,7 +94,8 @@ def statistic_videos(youtube):
                         'videoId': video_id,
                         'videoTitle': video_title,
                         'created_at': comment['publishedAt'],
-                        'comment': comment['textDisplay']
+                        'comment': comment['textDisplay'],
+                        'timestamp_comment': comment['publishedAt'],
                     }
                     comments.append(comment_item)
                     # Aggiungi l'ID del commento alla lista dei commenti inviati
@@ -113,6 +114,7 @@ def statistic_videos(youtube):
         json.dump(sent_comment_ids, file)
 
     send_to_logstash(comments)
+    #print(comments)
 
 
 # Intervallo di tempo tra ogni esecuzione in secondi
@@ -123,7 +125,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     youtube = get_authenticated_service()
-    
+
     # Loop infinito per eseguire il monitoraggio in tempo reale
     while True:
         try:

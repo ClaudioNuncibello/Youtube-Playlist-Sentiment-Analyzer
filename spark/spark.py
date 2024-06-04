@@ -36,6 +36,10 @@ es_mapping = {
                 "type": "date",
                 "format": "yyyy-MM-dd'T'HH:mm:ss"
             },
+            "timestamp_comment": {
+                "type": "date",
+                "format": "yyyy-MM-dd'T'HH:mm:ss"
+            },
             "comment": {
                 "type": "text",
                 "fielddata": True
@@ -95,7 +99,8 @@ sentiment_udf = udf(analyze_sentiment, FloatType())
 myProject = tp.StructType([
     tp.StructField(name='videoId', dataType=tp.StringType(), nullable=True),
     tp.StructField(name='videoTitle', dataType=tp.StringType(), nullable=True),
-    tp.StructField(name='created_at', dataType=tp.StringType(), nullable=True),
+    tp.StructField(name='created_at', dataType=tp.TimestampType(), nullable=True),
+    tp.StructField(name='timestamp_comment', dataType=tp.TimestampType(), nullable=True),
     tp.StructField(name='comment', dataType=tp.StringType(), nullable=True),
 ])
 
@@ -110,6 +115,12 @@ df = spark \
 df = df.selectExpr("CAST(value AS STRING)")\
         .select(from_json("value", myProject).alias("data"))\
         .select("data.*")
+# Modifica il formato di created_at e di timestamp
+df = df.withColumn("created_at", date_format(
+    "created_at", "yyyy-MM-dd'T'HH:mm:ss"))
+
+df = df.withColumn("timestamp_comment", date_format(
+    "timestamp_comment", "yyyy-MM-dd'T'HH:mm:ss"))
 
 #sentiment analysis trasform
 df = df.withColumn("sentiment_score", sentiment_udf(df["comment"]))
@@ -120,7 +131,7 @@ def send_batch_to_elasticsearch(df, epoch_id):
         rows = df.toLocalIterator()
         for row in rows:
             es.index(index=elastic_index, body=row.asDict(), ignore=400)
-        print("dati inviati ad elastic")
+            print("dati inviati ad elastic")
     except Exception as e:
         print(f"Errore durante l'invio dei dati a Elasticsearch: {e}")
 
