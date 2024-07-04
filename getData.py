@@ -26,7 +26,7 @@ def send_to_logstash(data):
     try:
         response = requests.post(logstash_url, json=data)
         if response.status_code == 200:
-            print("Dati inviati a Logstash con successo.")
+            print("Dati inviati  con successo.")
         else:
             print("Errore durante l'invio dei dati a Logstash. Codice di risposta:",
                   response.status_code)
@@ -37,7 +37,7 @@ def send_to_logstash(data):
 # Retrieve all videos in a YouTube playlist
 def playlist_videos(youtube):
 
-    playlist_id_ita = "PL_xGnDm5NCoN-EdtcyMhzGmhEtBWmhVLm"
+    playlist_id_ita = "PL_xGnDm5NCoNz0AsHBJfI_eRfp84Icfxw"
     playlist_items = []
     next_page_token = None
     while True:
